@@ -3,28 +3,53 @@
     作为整个控制系统的逻辑主干
 */
 
-#include <Stepper.h>
+#include <AccelStepper.h>
+// Mike McCauley 编写的 AccelStepper 库是一个非常棒的库，
+// 可用于您的项目。优点之一是它支持加速和减速，但它也有很多其他不错的功能。
 
-const int stepsPerRevolution = 2048;
+// 电机引脚定义
+#define motorPin1 8
+#define motorPin2 9
+#define motorPin3 10
+#define motorPin4 11
 
-Stepper stepper_28BYJs = Stepper(stepsPerRevolution, 8, 10, 9, 11);
+//定义AccelStepper接口类型；半步模式下的 4 线电机：
+#define MotorInterfaceType 8
+
+int button = 4;
+boolean button_state;
+unsigned long time_now = 0;
+
+AccelStepper stepper = AccelStepper(MotorInterfaceType, motorPin1, motorPin3, motorPin2, motorPin4);
 
 void setup()
 {
-    // Set the speed to 5 rpm;
-    stepper_28BYJs.setSpeed(15);
-
+    pinMode(button, INPUT);
+    stepper.setMaxSpeed(1000);
+    time_now = millis();
     Serial.begin(9600);
+    button_state = LOW;
 }
 
 void loop()
 {
-    // Step one revolution in one direction;
-    Serial.println("clockwise");
-    stepper_28BYJs.step(stepsPerRevolution);
-    // delay(500);
+    button_state = digitalRead(button);
+    while (button_state == LOW)
+    {
+        stepper.disableOutputs();
+        button_state = digitalRead(button);
+        while (millis() > time_now + 500)
+        {
+            Serial.println(button_state);
+            time_now = millis();
+        }
+    }
+    stepper.setSpeed(600);
+    stepper.runSpeed();
 
-    // Serial.println("counterclockwise");
-    // stepper_28BYJs.step(stepsPerRevolution);
-    // delay(500);
+    while (millis() > time_now + 500)
+    {
+        Serial.println(button_state);
+        time_now = millis();
+    }
 }
